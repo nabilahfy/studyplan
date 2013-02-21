@@ -3,7 +3,6 @@
 	<head>
 		<title>Stevens' Study Planner &raquo; Find Courses</title>
 		<?php require("../includes/styles.php"); ?>
-		<?php include("../includes/databaseClass.php"); ?>
 		
 		<script type="text/javascript">
 			//Sends value to main window
@@ -26,26 +25,36 @@
 	if(isset($_POST["search"]) && (!empty($_POST["course"]) || !empty($_POST["coursename"]) || !empty($_POST["department"])))
 	{
 		//Setup database
-		$db = new database();
-		$db->setup("w3_studyplanner", "QcRo2mEC", "db0.stevens.edu", "w3_studyplanner");
+		$host = "db0.stevens.edu";
+		$dbname = "w3_studyplanner";
+		$user = "w3_studyplanner";
+		$pass = "QcRo2mEC";
 		
-		//Sanitize & extract values
+		$dbh = new PDO("mysql:host=" . $host . ";dbname=" . $dbname, $user, $pass);
+		
+		//$db = new database();
+		//$db->setup("w3_studyplanner", "QcRo2mEC", "localhost", "w3_studyplanner");
+		
+		//Sanitize & extract values		
 		$course = strtolower(addslashes(strip_tags($_POST["course"])));
 		$name = addslashes(strip_tags($_POST["coursename"]));
 		$dept = strtolower(addslashes(strip_tags($_POST["department"])));
 		
 		//Check with database
 		$sql = "SELECT * FROM course WHERE ";
+		//$sql = "SELECT * FROM course WHERE ";
 		
 		if(!empty($course))
-			$sql .= "CONCAT(prefix, number) = '" . $course . "'";
+			$sql .= "CONCAT(prefix, number) = :course";
+			//$sql .= "CONCAT(prefix, number) = '" . $course . "'";
 		
 		if(!empty($name))
 		{
 			if(!empty($course))
 				$sql .= " AND ";
 			
-			$sql .= "course_name LIKE '%" . $name . "%'";
+			$sql .= "course_name LIKE %:name%";
+			//$sql .= "course_name LIKE '%" . $name . "%'";
 		}
 		
 		if(!empty($dept))
@@ -53,28 +62,43 @@
 			if(!empty($course) || !empty($name))
 				$sql .= " AND ";
 			
-			$sql .= "department = '" . $dept . "'";
+			$sql .= "department = :dept";
+			//$sql .= "department = '" . $dept . "'";
 		}
 		
-		$res = $db->send_sql($sql);
+		//$res = $db->send_sql($sql);
 		
-		$rownum = mysql_num_rows($res);
+		$sth = $dbh->prepare($sql);
+		if(!empty($course))
+			$sth->bindParam(":course", $course);
+		if(!empty($name))
+			$sth->bindParam(":name", $name);
+		if(!empty($dept))
+			$sth->bindParam(":dept", $dept);
+		
+		//$rownum = mysql_num_rows($res);
+		
+		$sth->execute();
+		$rownum = $sth->rowCount();
+		
+		echo "Results: " . $rownum . " courses.<br/>\n";
 		
 		if(!$rownum)
 			echo "Course doesn't exist in database.<br/>\n";
 		else
 		{
-			while($rownum-- > 0)
+			//while($rownum-- > 0)
+			while($row = $sth->fetch(PDO::FETCH_ASSOC))
 			{
-				$row = $db->next_row();
-			
-				$pre = $row[0];
-				$num = $row[1];
-				$cred = $row[2];
-				$name = $row[3];
-				$dept = $row[4];
-				$oc = $row[5];
-				$wc = $row[6];
+				//$row = $db->next_row();
+				
+				$pre = $row["prefix"]; //$row[0];
+				$num = $row["number"]; //$row[1];
+				$cred = $row["no_of_credits"]; //$row[2];
+				$name = $row["course_name"]; //$row[3];
+				$dept = $row["department"]; //$row[4];
+				$oc = $row["on_campus_semesters"]; //$row[5];
+				$wc = $row["web_campus_semesters"]; //$row[6];
 				
 				echo "</p><b><a href=\"Javascript:SendValueToParent('" . $pre . $num . "');\">Edit this course</a></b><br/>\n";
 				echo "Course prefix: " . $pre . "<br/>\n";

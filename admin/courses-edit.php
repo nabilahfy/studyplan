@@ -3,7 +3,6 @@
 	<head>
 		<title>Stevens' Study Planner &raquo; Edit Course</title>
 		<?php require("../includes/styles.php"); ?>
-		<?php include("../includes/databaseClass.php"); ?>
 		
 		<script type="text/javascript">
 			//Popup window code
@@ -47,8 +46,15 @@
 	if(isset($_POST["submit"]) && (!empty($_POST["courseprefix"]) && !empty($_POST["coursenumber"])))
 	{
 		//Setup database
-		$db = new database();
-		$db->setup("w3_studyplanner", "QcRo2mEC", "db0.stevens.edu", "w3_studyplanner");
+		$host = "db0.stevens.edu";
+		$dbname = "w3_studyplanner";
+		$user = "w3_studyplanner";
+		$pass = "QcRo2mEC";
+		
+		$dbh = new PDO("mysql:host=" . $host . ";dbname=" . $dbname, $user, $pass);
+		
+		//$db = new database();
+		//$db->setup("w3_studyplanner", "QcRo2mEC", "db0.stevens.edu", "w3_studyplanner");
 		
 		//Sanitize & extract values
 		$course = strtolower(addslashes(strip_tags($_POST["course"])));
@@ -84,8 +90,23 @@
 			}
 		
 		//Insert to database
-		$sql = "UPDATE course SET prefix = '" . $pre . "', number = " . $num . ", no_of_credits = " . $cred . ", course_name = '" . $name . "', department = '" . $dept . "', on_campus_semesters = '" . $oc . "', web_campus_semesters = '" . $wc . "' WHERE CONCAT(prefix, number) = '" . $course . "'";
-		$db->send_sql($sql);
+		$sql = "UPDATE course SET prefix = :pre, number = :num, no_of_credits = :cred, course_name = :name, department = :dept, on_campus_semesters = :oc, web_campus_semesters = :wc WHERE CONCAT(prefix, number) = :course";
+		
+		$sth = $dbh->prepare($sql);
+		
+		$sth->bindParam(":pre", $pre);
+		$sth->bindParam(":num", $num);
+		$sth->bindParam(":cred", $cred);
+		$sth->bindParam(":name", $name);
+		$sth->bindParam(":dept", $dept);
+		$sth->bindParam(":oc", $oc);
+		$sth->bindParam(":wc", $wc);
+		$sth->bindParam(":course", $course);
+		
+		$sth->execute();
+		
+		//$sql = "UPDATE course SET prefix = '" . $pre . "', number = " . $num . ", no_of_credits = " . $cred . ", course_name = '" . $name . "', department = '" . $dept . "', on_campus_semesters = '" . $oc . "', web_campus_semesters = '" . $wc . "' WHERE CONCAT(prefix, number) = '" . $course . "'";
+		//$db->send_sql($sql);
 		
 		echo "Course successfully edited.<br/>\n";
 	}
@@ -93,29 +114,47 @@
 	else if(isset($_POST["submit"]) && !empty($_POST["course"]))
 	{
 		//Setup database
-		$db = new database();
-		$db->setup("w3_studyplanner", "QcRo2mEC", "db0.stevens.edu", "w3_studyplanner");
+		$host = "db0.stevens.edu";
+		$dbname = "w3_studyplanner";
+		$user = "w3_studyplanner";
+		$pass = "QcRo2mEC";
+		
+		$dbh = new PDO("mysql:host=" . $host . ";dbname=" . $dbname, $user, $pass);
+		
+		//$db = new database();
+		//$db->setup("w3_studyplanner", "QcRo2mEC", "db0.stevens.edu", "w3_studyplanner");
 		
 		//Sanitize & extract values
 		$course = strtolower(addslashes(strip_tags($_POST["course"])));
 		
 		//Check with database
-		$sql = "SELECT * FROM course WHERE CONCAT(prefix, number) = '" . $course . "'";
-		$res = $db->send_sql($sql);
+		$sql = "SELECT * FROM course WHERE CONCAT(prefix, number) = :course";
 		
-		if(!mysql_num_rows($res))
+		$sth = $dbh->prepare($sql);
+		
+		$sth->bindParam(":course", $course);
+		
+		$sth->execute();
+		$rownum = $sth->rowCount();
+		
+		//$sql = "SELECT * FROM course WHERE CONCAT(prefix, number) = '" . $course . "'";
+		//$res = $db->send_sql($sql);
+		
+		if(!$rownum)
 			echo "Course doesn't exist in database.<br/>\n";
 		else
 		{
-			$row = $db->next_row();
+			//$row = $db->next_row();
 			
-			$pre = $row[0];
-			$num = $row[1];
-			$cred = $row[2];
-			$name = $row[3];
-			$dept = $row[4];
-			$oc = $row[5];
-			$wc = $row[6];
+			$row = $sth->fetch(PDO::FETCH_ASSOC);
+			
+			$pre = $row["prefix"]; //$row[0];
+			$num = $row["number"]; //$row[1];
+			$cred = $row["no_of_credits"]; //$row[2];
+			$name = $row["course_name"]; //$row[3];
+			$dept = $row["department"]; //$row[4];
+			$oc = $row["on_campus_semesters"]; //$row[5];
+			$wc = $row["web_campus_semesters"]; //$row[6];
 			
 			echo "Replace the details below with new values:<br/><br/>\n";
 ?>

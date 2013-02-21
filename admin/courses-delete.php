@@ -45,32 +45,55 @@
 			<hr/>
 			
 <?php
-				include("../includes/databaseClass.php");
-				if(isset($_POST['submit']) && !empty($_POST["course"]))
-				{
-					
-				$db = new database();
-				$db->setup("w3_studyplanner", "QcRo2mEC", "db0.stevens.edu", "w3_studyplanner");
+			//If form is submitted & course is not empty
+			if(isset($_POST["submit"]) && !empty($_POST["course"]))
+			{
 				
+				//Setup database
+				$host = "db0.stevens.edu";
+				$dbname = "w3_studyplanner";
+				$user = "w3_studyplanner";
+				$pass = "QcRo2mEC";
+				
+				$dbh = new PDO("mysql:host=" . $host . ";dbname=" . $dbname, $user, $pass);
+
+				//Extract value				
 				$course = strtolower(strip_tags($_POST["course"]));
 				
-				$query = "SELECT * FROM w3_studyplanner.course WHERE CONCAT(prefix, number) = '$course'";
-				$res = $db->send_sql($query);
-				$rows = mysql_num_rows($res);
-					if($rows==0)
-					{
-						
-						echo "$course does not exist in database.";
-					}
-					else
-					{
-						$query = "DELETE FROM w3_studyplanner.course WHERE CONCAT(prefix,  number) = '$course'";
-						$res = $db->send_sql($query);
-						echo "$course has been deleted.";
-					}
-				}
+				$sql = "SELECT * FROM course WHERE CONCAT(prefix, number) = :course";
+				
+				//$query = "SELECT * FROM w3_studyplanner.course WHERE CONCAT(prefix, number) = '$course'";
+				//$res = $db->send_sql($query);
+				
+				$sth = $dbh->prepare($sql);
+				
+				$sth->bindParam(":course", $course);
+				
+				$sth->execute();
+				
+				$rownum = $sth->rowCount();
+				
+				//$rows = mysql_num_rows($res);
+				if(!$rownum)
+					echo "Course does not exist in database.";
 				else
 				{
+					$sql = "DELETE FROM w3_studyplanner.course WHERE CONCAT(prefix,  number) =:course";
+					
+					$sth = $dbh->prepare($sql);
+					
+					$sth->bindParam(":course", $course);
+						
+					$sth->execute();
+					
+					//$query = "DELETE FROM w3_studyplanner.course WHERE CONCAT(prefix,  number) = '$course'";
+					//$res = $db->send_sql($query);
+					
+					echo "Course has been deleted.";
+				}
+			}	
+			else
+		{
 
 ?>
 			<h4>Delete Course</h4>

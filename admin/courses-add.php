@@ -3,7 +3,6 @@
 	<head>
 		<title>Stevens' Study Planner &raquo; Add Course</title>
 		<?php require("../includes/styles.php"); ?>
-		<?php include("../includes/databaseClass.php"); ?>
 	</head>
 	<body>
 		<?php require("../includes/navigation.php"); ?>
@@ -33,8 +32,15 @@
 	if(isset($_POST["submit"]) && (!empty($_POST["courseprefix"]) && !empty($_POST["coursenumber"])))
 	{
 		//Setup database
-		$db = new database();
-		$db->setup("w3_studyplanner", "QcRo2mEC", "db0.stevens.edu", "w3_studyplanner");
+		$host = "db0.stevens.edu";
+		$dbname = "w3_studyplanner";
+		$user = "w3_studyplanner";
+		$pass = "QcRo2mEC";
+		
+		$dbh = new PDO("mysql:host=" . $host . ";dbname=" . $dbname, $user, $pass);
+		
+		//$db = new database();
+		//$db->setup("w3_studyplanner", "QcRo2mEC", "db0.stevens.edu", "w3_studyplanner");
 		
 		//Sanitize & extract values
 		$pre = strtolower(addslashes(strip_tags($_POST["courseprefix"])));
@@ -67,9 +73,23 @@
 			}
 		
 		//Insert to database
-		$sql = "INSERT INTO course(prefix, number, no_of_credits, course_name, department, on_campus_semesters, web_campus_semesters) VALUES ('" . $pre . "', " . $num . ", " . $cred . ", '" . $name . "', '" . $dept . "', '" . $oc . "', '" . $wc . "')";
-		$db->send_sql($sql);
+		$sql = "INSERT INTO course(prefix, number, no_of_credits, course_name, department, on_campus_semesters, web_campus_semesters) VALUES (:pre, :num, :cred, :name, :dept, :oc, :wc)";
 		
+		$sth = $dbh->prepare($sql);
+		
+		$sth->bindParam(":pre", $pre);
+		$sth->bindParam(":num", $num);
+		$sth->bindParam(":cred", $cred);
+		$sth->bindParam(":name", $name);
+		$sth->bindParam(":dept", $dept);	
+		$sth->bindParam(":oc", $oc);
+		$sth->bindParam(":wc", $wc);
+			
+		$sth->execute();
+		
+		//$sql = "INSERT INTO course(prefix, number, no_of_credits, course_name, department, on_campus_semesters, web_campus_semesters) VALUES ('" . $pre . "', " . $num . ", " . $cred . ", '" . $name . "', '" . $dept . "', '" . $oc . "', '" . $wc . "')";
+		//$db->send_sql($sql);
+				
 		echo "Course successfully added.<br/>\n";
 	}
 	else
@@ -108,6 +128,8 @@
 					<label class="control-label" for="Department">Department</label>
 					<div class="controls">
 						<select name="department">
+							<option value="arts">Arts and Letters</option>
+							<option value="business">Business and Technology</option>
 							<option value="chemical">Chemical Engineering & Materials Science</option>
 							<option value="chemistry">Chemistry, Biology & Biomedical Engineering</option>
 							<option value="civil">Civil, Environmental & Ocean Engineering</option>
@@ -116,10 +138,8 @@
 							<option value="mathematical">Mathematical Science</option>
 							<option value="mechanical">Mechanical Engineering</option>
 							<option value="physics">Physics & Engineering Physics</option>
-							<option value="systems">Systems & Enterprises</option>
-							<option value="business">Business and Technology</option>
 							<option value="quantitative">Quantitative Finance</option>
-							<option value="arts">Arts and Letters</option>
+							<option value="systems">Systems & Enterprises</option>
 						</select>
 					</div>
 				</div>

@@ -3,6 +3,7 @@
 	<head>
 		<title>Stevens' Study Planner &raquo; Delete Course Group</title>
 		<?php require("../includes/styles.php"); ?>
+		
 	</head>
 	<body>
 		<?php require("../includes/navigation.php"); ?>
@@ -28,14 +29,44 @@
 
 			<hr/>
 			
+<?php		
+		//If form is submitted & course group is not empty
+		if(isset($_POST["submit"]) && !empty($_POST["CourseGroup"]))
+		{
+			//Setup database
+			$host = "db0.stevens.edu";
+			$dbname = "w3_studyplanner";
+			$user = "w3_studyplanner";
+			$pass = "QcRo2mEC";
+				
+			$dbh = new PDO("mysql:host=" . $host . ";dbname=" . $dbname, $user, $pass);
+			
+			//Extract values
+			$cgroup = strtolower(addslashes(strip_tags($_POST["CourseGroup"])));
+		
+			//Check with database
+			$sql = "SELECT * FROM course_group WHERE name = :cgroup";
+			
+			$sth = $dbh->prepare($sql);
+			if(!empty($cgroup))
+				$sth->bindParam(":cgroup", $cgroup);
+			
+			$sth->execute();
+			echo "Course group has been deleted";
+		}
+		else
+		{
+?>
 			<h4>Delete Course Group</h4>
 			<p>Please select course group and click <em>"Delete Course Group"</em> button.</p>
 			
 			<form class="form-horizontal">
 				<div class="control-group">
-					<label class="control-label" for="CourseGroup">Select Course Group</label>
+					<label class="control-label" name="CourseGroup" for="CourseGroup">Select Course Group</label>
 					<div class="controls">
-						<select></select>
+						<select>
+							<option>humanities</option>
+						</select>
 					</div>
 				</div>
 				<div class="control-group">
@@ -44,6 +75,9 @@
 					</div>
 				</div>
 			</form>
+<?php
+		}
+?>
 			
 			<footer>
 				<p>© Study Planner 2013</p>
